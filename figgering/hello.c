@@ -5,9 +5,9 @@
 int main() {
 	DDRB = _BV(0);
 	while (1) {
-		_delay_ms(200);
+		_delay_ms(20);
 		PORTB = _BV(0);
-		_delay_ms(200);
+		_delay_ms(20);
 		PORTB = 0;
 	}
 }
