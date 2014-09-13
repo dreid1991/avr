@@ -1,0 +1,55 @@
+
+#define F_CPU 1048576/256
+#define NUMRD 10
+#define HALF NUMRD/2
+#define IN 0
+#define OUT 1
+
+#include <avr/io.h>
+#include <util/delay.h>
+#include <avr/cpufunc.h>
+#include <avr/interrupt.h>
+
+
+volatile signed short timerOverflowCount = 0;
+
+volatile unsigned char vals[NUMRD];
+
+
+int main() {
+	TIMSK |= 1<< TOIE0;  
+	CLKPR = CLKPCE;
+	CLKPR = CLKPS3;
+	TCCR0B |= CS01 | CS00;
+	DDRB = _BV(OUT);
+	sei();		
+	volatile unsigned char curIdx = 0;
+	volatile unsigned char curVal = PINB & _BV(IN);
+	volatile unsigned char i=0;
+	for (i=0; i<NUMRD; i++) {
+		vals[i] = curVal;
+	}
+	while (1) {
+		vals[curIdx] = PINB & _BV(IN) ? 1 : 0;
+		if (curIdx == NUMRD-1) {
+			curIdx = 0;
+		} else {
+			curIdx++;
+		}
+		volatile unsigned char sum = 0;
+		for (i=0; i<NUMRD; i++) {
+			sum += vals[i];
+		}
+		if (sum >= HALF) {
+			PORTB |= _BV(OUT);
+		} else {
+			PORTB &= ~_BV(OUT);
+		}
+
+	}
+}
+
+ISR (TIMER0_OVF_vect) {
+	timerOverflowCount++;	
+}
+
