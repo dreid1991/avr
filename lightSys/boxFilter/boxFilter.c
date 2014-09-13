@@ -1,6 +1,6 @@
 
 #define F_CPU 1048576/256
-#define NUMRD 10
+#define NUMRD 100
 #define HALF NUMRD/2
 #define IN 0
 #define OUT 1
@@ -17,10 +17,10 @@ volatile unsigned char vals[NUMRD];
 
 
 int main() {
-	TIMSK |= 1<< TOIE0;  
-	CLKPR = CLKPCE;
-	CLKPR = CLKPS3;
-	TCCR0B |= CS01 | CS00;
+	TIMSK |= _BV(TOIE0);  
+	CLKPR = _BV(CLKPCE); //not changing thing.  not sure why not
+	CLKPR = _BV(CLKPS1);
+	TCCR0B = _BV(CS02);
 	DDRB = _BV(OUT);
 	sei();		
 	volatile unsigned char curIdx = 0;
