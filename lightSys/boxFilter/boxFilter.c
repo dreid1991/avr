@@ -1,6 +1,6 @@
 
 #define F_CPU 1048576/256
-#define NUMRD 100
+#define NUMRD 60 
 #define HALF NUMRD/2
 #define IN 0
 #define OUT 1
@@ -22,6 +22,8 @@ int main() {
 	CLKPR = _BV(CLKPS1);
 	TCCR0B = _BV(CS02);
 	DDRB = _BV(OUT);
+	GIMSK = _BV(PCIE);
+	PCMSK = _BV(PCINT0);
 	sei();		
 	volatile unsigned char curIdx = 0;
 	volatile unsigned char curVal = PINB & _BV(IN);
