@@ -156,9 +156,9 @@ void registerEndMsg() {
 
 	//spewMsg(totalDashs);
 	//spewMsg(totalDots);
-	spewMsg(msg);
-	_delay_ms(2000);
 	sendMsg(msg);
+	_delay_ms(100);
+	spewMsg(msg);
 	sei();	
 }
 
