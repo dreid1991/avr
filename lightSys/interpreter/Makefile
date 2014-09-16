@@ -1,5 +1,5 @@
 
-PRG = interpOrig
+PRG = interpreter
 FLAGS = -std=c99 -O
 all: $(PRG).c
 	avr-gcc $(PRG).c -mmcu=attiny85 $(FLAGS) -o $(PRG).o 

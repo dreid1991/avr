@@ -95,9 +95,8 @@ void spewMsg(char leMsg) {
 	_delay_ms(200);
 	PORTB &= ~_BV(LEDOUT);
 	_delay_ms(400);
-/*
 	for (signed char i=7; i>=0; i--) {
-		POR/TB |= _BV(LEDOUT);
+		PORTB |= _BV(LEDOUT);
 		if (leMsg & (1 << i)) {
 			_delay_ms(1300); 
 			
@@ -108,7 +107,6 @@ void spewMsg(char leMsg) {
 		_delay_ms(500);
 		
 	}
-*/
 
 }
 
@@ -160,7 +158,7 @@ void registerEndMsg() {
 	//spewMsg(totalDots);
 	spewMsg(msg);
 	_delay_ms(2000);
-//	sendMsg(msg);
+	sendMsg(msg);
 	sei();	
 }
 
@@ -280,8 +278,7 @@ ISR (TIMER0_OVF_vect) {
 	if (recording && !isDown && timerOverflowCount > 125) { //let sit for short time, then register last. ALSO tick = 16 ms as 1 MHz
 		condenseMsg();
 		registerEndMsg();
-		//need to reset junk
-		HEEEEEYYY - YOU AREN'Y RESETING ANYTHING AND SO PROBABLY WRITING BITS ALL OVER THE PLACE ONCE MSGIDX GOES PAST 7 OR 8 OR WHATEVER.  COMPILE THIS
+		resetTimes();
 	}
 		//mebe make it sleep if it's just hanging around and no program is running
 		
