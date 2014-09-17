@@ -14,7 +14,15 @@
 volatile unsigned char msg = 0;
 volatile char msgIdx = 0;
 volatile unsigned char pinClockLast;
-#include <avr/io.h>
+/*
+#define DAT 0
+#define CLK 1
+
+#if CLK == 0
+#define CLKINT PCINT1
+#else
+#define CLKINT PCINT0
+*/
 /*
 0->data
 1->clock
@@ -22,11 +30,9 @@ volatile unsigned char pinClockLast;
 int main(void)
 {
 	DDRB = _BV(2);
-	CLKPR = CLKPCE;
-	CLKPR = CLKPS0;
 	//wdt_disable(); //disables watchdog	
 	GIMSK |= 1<<PCIE; //enabling pin change interrupts
-	PCMSK |= 1<<PCINT1; //setting pin 1 to trigger interrupts
+	PCMSK |= _BV(PCINT1); //setting pin 1 to trigger interrupts
 	pinClockLast = 0;
 	sei();
     while(1)
