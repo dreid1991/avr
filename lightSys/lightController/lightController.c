@@ -78,7 +78,11 @@ int main(void)
 	sei();
     while(1)
     {
-		PORTB = ((mask & CHNLS[0]) << CHNLS[0]) | ((mask & CHNLS[1]) << CHNLS[1]) | ((mask & CHNLS[2]) << CHNLS[2]);
+		unsigned char portbprg = 0;
+		for (unsigned char i=0; i<NUMCH; i++) {
+			portbprg |= _BV(CHNLS[i]);
+		}
+		PORTB = mask | portbprg;
 
 
 		updater();
