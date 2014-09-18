@@ -11,8 +11,16 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 #include <avr/cpufunc.h>
-
 #include <avr/io.h>
+
+#ifdef TESTING
+#define PININTFN void pinInt();
+#define CLKINTFN void clkInt();
+#else
+#define PININTFN ISR (PCINT0_vect)
+#define CLKINTFN ISR (TIMER0_OVF_vect)
+#endif
+
 #define CLK 3
 #define DAT 4
 
@@ -22,6 +30,7 @@
 #define CH1 1 
 #define CH2 2
 
+#define BRIGHTMAX 255
 #define SSHORTMAX 32767
 
 #if CLK == 3 
@@ -36,13 +45,14 @@ volatile char msgIdx = 0;
 volatile unsigned char prog = 0;
 volatile unsigned char pinClockLast;
 volatile unsigned short brightness[NUMCH];
+volatile unsigned char brightTime[NUMCH];
 volatile signed short speeds[NUMCH];
 volatile signed short TOC = 0;
 volatile signed char gettingBrighter[NUMCH];
 volatile signed short brightDelay[NUMCH];
 volatile unsigned char argc;
 volatile unsigned char mask = 0;
-volatile unsigned char CHNLS[3] = {CH0, CH1, CH2};
+const unsigned char CNHL[3] = {CH0, CH1, CH2};
 //end of ze globalz
 
 //updaters
@@ -67,7 +77,7 @@ int main(void)
 	DDRB = _BV(CH0) | _BV(CH1) | _BV(CH2);
 	CLKPR = _BV(CLKPCE);
 	CLKPR = 0; //8 whole mhz
-	//wdt_disable(); //disables watchdog	
+	wdt_disable(); //disables watchdog	
 	GIMSK |= _BV(PCIE); //enabling pin change interrupts
 	PCMSK |= _BV(PCINTCLK); //setting pin 1 to trigger interrupts
 	pinClockLast = 0;
@@ -78,17 +88,7 @@ int main(void)
 	sei();
     while(1)
     {
-		unsigned char portbprg = 0;
-		for (unsigned char i=0; i<NUMCH; i++) {
-			portbprg |= _BV(CHNLS[i]);
-		}
-		PORTB = mask | portbprg;
-
-
 		updater();
-		for (unsigned char i=0; i<NUMCH; i++) {
-			brightDelay[i] = brightness[i] >> 8;
-		}
     }
 }
 
@@ -114,7 +114,7 @@ void setProgram() {
 
 
 
-void interrupt() {
+void pinInt() {
 	unsigned char pinClock = PINB & _BV(DAT);
 	if (pinClock != pinClockLast && pinClock != 0) {
 		readData();
@@ -126,16 +126,33 @@ void interrupt() {
 	pinClockLast = pinClock;
 }
 
-
-ISR (PCINT0_vect) {
-	interrupt();
+PININTFN {
+	pinInt();
 }
 
 
-ISR (TIMER0_OVF_vect) {
+void setInitBrightnesses() {
+	for (volatile unsigned char i=0; i<NUMCH; i++) {
+		brightTime[i] = brightness[i] >> 8;
+		if ((brightTime[i] != 0) && !(mask & _BV(CNHL[i]))) {
+			PORTB |= _BV(CNHL[i]);
+		} else {
+			PORTB &= ~_BV(CNHL[i]);
+		}
+	}
+}
+
+CLKINTFN { // so 255 is on the whole time
 	TOC++; 
-	if (TOC == SSHORTMAX) {
+	if (TOC == BRIGHTMAX) {
 		TOC = 0;
+		setInitBrightnesses();
+	} else {
+		for (unsigned char i=0; i<NUMCH; i++) {
+			if (TOC == brightTime[i]) {
+				PORTB &= ~_BV(CNHL[i]);
+			}
+		}
 	}
 		
 

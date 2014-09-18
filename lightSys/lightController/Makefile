@@ -15,3 +15,5 @@ flash: $(PRG).c
 	avr-objcopy -O2 ihex $(PRG).o $(PRG).hex
 	avrdude -c usbtiny -p t85 -P usb -U flash:w:$(PRG).hex
 
+test: $(PRG).c helpers.c
+	gcc -O2 $(PRG).c helpers.c -o test.out
