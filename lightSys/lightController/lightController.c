@@ -6,12 +6,15 @@
  */ 
 #define MSGLEN 8
 #define F_CPU 8000000
+
+#ifndef TESTING
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <avr/wdt.h>
 #include <avr/cpufunc.h>
 #include <avr/io.h>
+#endif
 
 #ifdef TESTING
 #define PININTFN void pinInt();
