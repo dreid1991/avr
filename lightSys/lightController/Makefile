@@ -16,4 +16,4 @@ flash: $(PRG).c
 	avrdude -c usbtiny -p t85 -P usb -U flash:w:$(PRG).hex
 
 test: $(PRG).c helpers.c
-	gcc -O2 $(PRG).c helpers.c -o test.out
+	g++ -O2 $(PRG).c -o test.out -std=c++11

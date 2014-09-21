@@ -6,7 +6,7 @@
  */ 
 #define MSGLEN 8
 #define F_CPU 8000000
-
+#include "helpers.c"
 #ifndef TESTING
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -17,8 +17,8 @@
 #endif
 
 #ifdef TESTING
-#define PININTFN void pinInt();
-#define CLKINTFN void clkInt();
+#define PININTFN void pinIntWrap()
+#define CLKINTFN void clkInt()
 #else
 #define PININTFN ISR (PCINT0_vect)
 #define CLKINTFN ISR (TIMER0_OVF_vect)
@@ -89,10 +89,14 @@ int main(void)
 	TCCR0B |= 3;//setting the clock as some multiple of the global clock 
 
 	sei();
+#ifndef TESTING
     while(1)
     {
 		updater();
     }
+#else
+	helper();
+#endif
 }
 
 
