@@ -77,7 +77,7 @@ void noUpInit() {
 
 void testInit() {
 //	brightness[0] = 0x8fff;
-	brightness[0] = 0x0;
+	brightness[0] = 0x0100;
 	brightness[1] = 0x4fff;
 	brightness[2] = 0x0ff0;
 	mask |= _BV(CH1);
@@ -180,12 +180,12 @@ CLKINTFN { // so 255 is on the whole time
 	TOC++; 
 	if (TOC == BRIGHTMAX) {
 		TOC = 0;
-	//	setCycleBrightnesses();
-		PORTB |= _BV(CH0);
+		setCycleBrightnesses();
+	//	PORTB |= _BV(CH0);
 	}
-	if (TOC == 1) {
-		PORTB &= ~_BV(CH0);
-	}
+//	if (TOC == 1) {
+//		PORTB &= ~_BV(CH0);
+//	}
 	for (unsigned char i=0; i<NUMCH; i++) {
 		if (TOC == brightTime[i]) {
 			PORTB &= ~_BV(CHNL[i]);
