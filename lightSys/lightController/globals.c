@@ -12,6 +12,7 @@
 
 #define BRIGHTMAX 255
 #define SSHORTMAX 32767
+#define SHORTMAX 65535
 
 #if CLK == 3 
 #define PCINTCLK PCINT3
@@ -21,11 +22,11 @@
 
 #define UPDATERINIT(base) updater_package_init(&base, &base ## Init)
 
-#define NUMUPS 2
+#define NUMUPS 3
 
 #define NOUP_IDX 0
 #define TEST_IDX 1
-
+#define PULSE_IDX 2 
 
 struct updater_package {
 	void (*update) ();
@@ -62,6 +63,23 @@ struct updater_package updater_package_init(void (*updater) (), void (*updaterIn
 	u.update = updater;
 	u.init = updaterInit;
 	return u;
+}
+
+
+
+signed char hash(signed char x) {
+	signed char y = 0;
+	//avg over char's range is -4
+	for (unsigned char i=0; i<8; i++) {
+		char digit = (x >> i) & 1;
+		y = digit + (y << 2) + (y << 4) - y;
+	}
+	return y;
+}
+
+signed char offsetTOC() {
+	signed short x = TOC;
+	return TOC - 128;
 }
 
 

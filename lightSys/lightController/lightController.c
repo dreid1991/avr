@@ -53,11 +53,13 @@ const unsigned char CHNL[3] = {CH0, CH1, CH2};
 
 void noUp();
 void test();
+void pulse();
 //end updaters
 
 //updaterInits
 void noUpInit();
 void testInit();
+void pulseInit();
 //end updaterInits
 
 //updater implementations
@@ -66,8 +68,17 @@ void noUp() {
 }
 
 void test() {
+	if (brightness[0] == SHORTMAX) {
+		speeds[0] = -1;
+	} else if (brightness[0] == 0) {
+		speeds[0] = 1;
+	}
+	brightness[0] += speeds[0];
 }
 
+void pulse() {
+
+}
 //end updater implementations
 
 //init implementations
@@ -77,18 +88,23 @@ void noUpInit() {
 
 void testInit() {
 //	brightness[0] = 0x8fff;
-	brightness[0] = 0x0100;
+	brightness[0] = 0x0000;
+	speeds[0] = 1;
 	brightness[1] = 0x4fff;
 	brightness[2] = 0x0ff0;
 	mask |= _BV(CH1);
 }
 
+void pulseInit() {
+
+}
 //end init implementations
 
 int main(void)
 {
 	updaters[NOUP_IDX] = UPDATERINIT(noUp);
 	updaters[TEST_IDX] = UPDATERINIT(test);
+	updaters[PULSE_IDX] = UPDATERINIT(pulse);
 	updater = updaters[NOUP_IDX];
 
 	DDRB = _BV(CH0) | _BV(CH1) | _BV(CH2);
