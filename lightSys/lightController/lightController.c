@@ -6,8 +6,10 @@
  */ 
 #define MSGLEN 8
 #define F_CPU 8000000
-#include "helpers.c"
+//#include "helpers.cpp"
+
 #ifndef TESTING
+#include "globals.c"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -24,25 +26,10 @@
 #define CLKINTFN ISR (TIMER0_OVF_vect)
 #endif
 
-#define CLK 3
-#define DAT 4
 
-#define NUMCH 3
-
-#define CH0 0
-#define CH1 1 
-#define CH2 2
-
-#define BRIGHTMAX 255
-#define SSHORTMAX 32767
-
-#if CLK == 3 
-#define PCINTCLK PCINT3
-#else
-#define PCINTCLK PCINT4
-#endif
 
 //global biz
+/*
 volatile unsigned char msg = 0;
 volatile char msgIdx = 0;
 volatile unsigned char prog = 0;
@@ -55,44 +42,80 @@ volatile signed char gettingBrighter[NUMCH];
 volatile signed short brightDelay[NUMCH];
 volatile unsigned char argc;
 volatile unsigned char mask = 0;
-const unsigned char CNHL[3] = {CH0, CH1, CH2};
+const unsigned char CHNL[3] = {CH0, CH1, CH2};
+*/
 //end of ze globalz
+
+
 
 //updaters
 
 
 void noUp();
-
-void (*updater) () = &noUp;
+void test();
 //end updaters
+
+//updaterInits
+void noUpInit();
+void testInit();
+//end updaterInits
 
 //updater implementations
 void noUp() {
 	_NOP();
 }
 
+void test() {
+}
 
 //end updater implementations
 
+//init implementations
+void noUpInit() {
+
+}
+
+void testInit() {
+//	brightness[0] = 0x8fff;
+	brightness[0] = 0x0;
+	brightness[1] = 0x4fff;
+	brightness[2] = 0x0ff0;
+	mask |= _BV(CH1);
+}
+
+//end init implementations
 
 int main(void)
 {
+	updaters[NOUP_IDX] = UPDATERINIT(noUp);
+	updaters[TEST_IDX] = UPDATERINIT(test);
+	updater = updaters[NOUP_IDX];
+
 	DDRB = _BV(CH0) | _BV(CH1) | _BV(CH2);
 	CLKPR = _BV(CLKPCE);
 	CLKPR = 0; //8 whole mhz
 	wdt_disable(); //disables watchdog	
-	GIMSK |= _BV(PCIE); //enabling pin change interrupts
-	PCMSK |= _BV(PCINTCLK); //setting pin 1 to trigger interrupts
+	//UNCOMMENT THESE
+//	GIMSK |= _BV(PCIE); //enabling pin change interrupts
+//	PCMSK |= _BV(PCINTCLK); //setting pin 1 to trigger interrupts
 	pinClockLast = 0;
 	
 	TIMSK |= _BV(TOIE0); 
-	TCCR0B |= 3;//setting the clock as some multiple of the global clock 
 
+	TCCR0B = _BV(CS00);//setting the clock as some multiple of the global clock 
+	msg = 1;	
+	setProgram();
+	msg = 0;
 	sei();
 #ifndef TESTING
     while(1)
     {
-		updater();
+		if (newProgram) {
+			updater.init();
+			TOC = BRIGHTMAX - 1; //so set brightness is called first time through
+			newProgram = 0;
+		}
+		updater.update();
     }
 #else
 	helper();
@@ -115,11 +138,13 @@ void clearMsg() {
 
 void setProgram() {
 	if (msg == 0) {
-		updater = &noUp;
+		updater = updaters[NOUP_IDX];
+	} else if (msg == 1) {
+		updater = updaters[TEST_IDX];
 	}
+	newProgram = 1;
+
 }
-
-
 
 void pinInt() {
 	unsigned char pinClock = PINB & _BV(DAT);
@@ -127,6 +152,7 @@ void pinInt() {
 		readData();
 		if (msgIdx == 8) {
 			setProgram();
+			TOC = BRIGHTMAX - 1;
 			clearMsg();
 		}
 	}
@@ -138,13 +164,14 @@ PININTFN {
 }
 
 
-void setInitBrightnesses() {
+void setCycleBrightnesses() {
+	//cout <<"mask is " <<  (int) mask << endl;
 	for (volatile unsigned char i=0; i<NUMCH; i++) {
 		brightTime[i] = brightness[i] >> 8;
-		if ((brightTime[i] != 0) && !(mask & _BV(CNHL[i]))) {
-			PORTB |= _BV(CNHL[i]);
+		if ((brightTime[i] != 0) && !(mask & _BV(CHNL[i]))) {
+			PORTB |= _BV(CHNL[i]);
 		} else {
-			PORTB &= ~_BV(CNHL[i]);
+			PORTB &= ~_BV(CHNL[i]);
 		}
 	}
 }
@@ -153,14 +180,18 @@ CLKINTFN { // so 255 is on the whole time
 	TOC++; 
 	if (TOC == BRIGHTMAX) {
 		TOC = 0;
-		setInitBrightnesses();
-	} else {
-		for (unsigned char i=0; i<NUMCH; i++) {
-			if (TOC == brightTime[i]) {
-				PORTB &= ~_BV(CNHL[i]);
-			}
-		}
+	//	setCycleBrightnesses();
+		PORTB |= _BV(CH0);
 	}
-		
+	if (TOC == 1) {
+		PORTB &= ~_BV(CH0);
+	}
+	for (unsigned char i=0; i<NUMCH; i++) {
+		if (TOC == brightTime[i]) {
+			PORTB &= ~_BV(CHNL[i]);
+		}
+//		cout << (bool) (PORTB & _BV(CHNL[i])) << ", ";
+	}
+//	cout << endl;
 
 }
