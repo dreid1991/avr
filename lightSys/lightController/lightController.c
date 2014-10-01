@@ -49,7 +49,7 @@ const unsigned char CHNL[3] = {CH0, CH1, CH2};
 
 
 //updaters
-
+volatile unsigned char kk = 0;
 
 void noUp();
 void test();
@@ -74,10 +74,28 @@ void test() {
 		speeds[0] = 1;
 	}
 	brightness[0] += speeds[0];
+		
+
 }
 
 void pulse() {
 
+}
+
+
+void flash() {
+	if (brightness[0] == 0) {
+		brightness[0] = 0xffff;
+	} else {
+		brightness[0] = 0x0;
+	}
+	_delay_ms(1000);
+	kk++;
+	if (kk==5) {
+		msg = 1;
+		setProgram();
+		msg = 0;
+	}
 }
 //end updater implementations
 
@@ -98,6 +116,14 @@ void testInit() {
 void pulseInit() {
 
 }
+
+
+void flashInit() {
+	brightness[0] = 0x0000;
+	brightness[1] = 0x0000;
+	brightness[2] = 0x0000;
+
+}
 //end init implementations
 
 int main(void)
@@ -105,6 +131,7 @@ int main(void)
 	updaters[NOUP_IDX] = UPDATERINIT(noUp);
 	updaters[TEST_IDX] = UPDATERINIT(test);
 	updaters[PULSE_IDX] = UPDATERINIT(pulse);
+	updaters[FLASH_IDX] = UPDATERINIT(flash);
 	updater = updaters[NOUP_IDX];
 
 	DDRB = _BV(CH0) | _BV(CH1) | _BV(CH2);
@@ -119,7 +146,7 @@ int main(void)
 	TIMSK |= _BV(TOIE0); 
 
 	TCCR0B = _BV(CS00);//setting the clock as some multiple of the global clock 
-	msg = 1;	
+	msg = 3;	
 	setProgram();
 	msg = 0;
 	sei();
@@ -157,6 +184,10 @@ void setProgram() {
 		updater = updaters[NOUP_IDX];
 	} else if (msg == 1) {
 		updater = updaters[TEST_IDX];
+	} else if (msg == 2) {
+		updater = updaters[PULSE_IDX];
+	} else if (msg == 3) {
+		updater = updaters[FLASH_IDX];
 	}
 	newProgram = 1;
 

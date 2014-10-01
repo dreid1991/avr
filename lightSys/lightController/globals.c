@@ -22,12 +22,12 @@
 
 #define UPDATERINIT(base) updater_package_init(&base, &base ## Init)
 
-#define NUMUPS 3
+#define NUMUPS 4
 
 #define NOUP_IDX 0
 #define TEST_IDX 1
 #define PULSE_IDX 2 
-
+#define FLASH_IDX 3
 struct updater_package {
 	void (*update) ();
 	void (*init) ();
