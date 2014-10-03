@@ -36,7 +36,7 @@ volatile unsigned char prog = 0;
 volatile unsigned char pinClockLast;
 volatile unsigned short brightness[NUMCH];
 volatile unsigned char brightTime[NUMCH];
-volatile signed short speeds[NUMCH];
+volatile signed short speed[NUMCH];
 volatile signed short TOC = 0;
 volatile signed char gettingBrighter[NUMCH];
 volatile signed short brightDelay[NUMCH];
@@ -49,7 +49,6 @@ const unsigned char CHNL[3] = {CH0, CH1, CH2};
 
 
 //updaters
-volatile unsigned char kk = 0;
 
 void noUp();
 void test();
@@ -69,17 +68,48 @@ void noUp() {
 
 void test() {
 	if (brightness[0] == SHORTMAX) {
-		speeds[0] = -1;
+		speed[0] = -1;
 	} else if (brightness[0] == 0) {
-		speeds[0] = 1;
+		speed[0] = 1;
 	}
-	brightness[0] += speeds[0];
+	brightness[0] += speed[0];
 		
 
 }
 
 void pulse() {
+	volatile signed short rnd = myHash(offsetTOC(TOC));
+	//rnd -= 14;
+	if (brightness[0] < 40000) {
+		rnd += 35;
+	} else if (brightness[0] < 50000) {
+		rnd += 15;
+	}
+	speed[0] += rnd * ((absChar(rnd) & 1) + 1) * ((((absChar(rnd) & 8) >> 3) + 1) << 5);
 
+	volatile signed long trialBright = brightness[0];
+	trialBright += speed[0] >> 7;
+//need to bound speed too.  Seems suspect to underflowing
+	if (next > SHORTMAX) {
+		brightness[0] = SHORTMAX;
+		speed[0] = 0;
+	} else if (next < 0) {
+		brightness[0] = 0;
+		speed[0] = 0;
+	} else {
+		brightness[0] = next;
+	}
+	/*
+	signed long trialNext = ((signed long) brightness[0]) + (signed long) speed[0];
+	if (trialNext < 0) {
+		speed[0] = abs(speed[0]);
+	} else if (trialNext >= SHORTMAX) {
+		speed[0] = -abs(speed[0]);
+	}
+	brightness[0] += speed[0];
+
+	speed[0] += myHash(offsetTOC()) >> 4;
+	*/
 }
 
 
@@ -90,12 +120,7 @@ void flash() {
 		brightness[0] = 0x0;
 	}
 	_delay_ms(1000);
-	kk++;
-	if (kk==5) {
-		msg = 1;
-		setProgram();
-		msg = 0;
-	}
+
 }
 //end updater implementations
 
@@ -107,14 +132,15 @@ void noUpInit() {
 void testInit() {
 //	brightness[0] = 0x8fff;
 	brightness[0] = 0x0000;
-	speeds[0] = 1;
+	speed[0] = 1;
 	brightness[1] = 0x4fff;
 	brightness[2] = 0x0ff0;
 	mask |= _BV(CH1);
 }
 
 void pulseInit() {
-
+	brightness[0] = myHash(offsetTOC());
+	speed[0] = 0;
 }
 
 
@@ -146,7 +172,7 @@ int main(void)
 	TIMSK |= _BV(TOIE0); 
 
 	TCCR0B = _BV(CS00);//setting the clock as some multiple of the global clock 
-	msg = 3;	
+	msg = 2;	
 	setProgram();
 	msg = 0;
 	sei();

@@ -42,7 +42,7 @@ volatile unsigned char newProgram = 0;
 
 volatile unsigned short brightness[NUMCH];
 volatile unsigned char brightTime[NUMCH];
-volatile signed short speeds[NUMCH];
+volatile signed short speed[NUMCH];
 volatile signed short TOC = BRIGHTMAX;
 volatile signed char gettingBrighter[NUMCH];
 volatile signed short brightDelay[NUMCH];
@@ -67,10 +67,10 @@ struct updater_package updater_package_init(void (*updater) (), void (*updaterIn
 
 
 
-signed char hash(signed char x) {
+signed char myHash(signed char x) {
 	signed char y = 0;
 	//avg over char's range is -4
-	for (unsigned char i=0; i<8; i++) {
+	for (unsigned char i=0; i<7; i++) {  //HEY - MAKE IT 8 AGAIN?
 		char digit = (x >> i) & 1;
 		y = digit + (y << 2) + (y << 4) - y;
 	}
@@ -82,5 +82,20 @@ signed char offsetTOC() {
 	return TOC - 128;
 }
 
+signed short abs(signed short x) {
+	if (x < 0) {
+		return -x;
+	} else {
+		return x;
+	}
+}
+
+signed char absChar(signed char x) {
+	if (x < 0) {
+		return -x;
+	} else {
+		return x;
+	}
+}
 
 #endif
