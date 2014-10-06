@@ -50,7 +50,14 @@ void helper() {
 
 	clkInt();
 
+	unsigned short x = 300; SHORTMAX;
+	cout << x << endl;
+	signed char dx = 150;
+	signed char res = boundShort(&x, &dx);
+	cout << x << endl;
+
 	//cout << (int) brightTime[0] << ", " << (int) brightTime[1] << ", " << (int) brightTime[2] << endl;
+	/*
 	for (unsigned int i=0; i<20000; i++) {
 		if (rand() < RAND_MAX/2) {
 
@@ -59,6 +66,7 @@ void helper() {
 		}
 		clkInt();
 	}
+	*/
 	/*
 	cout << "ning" << endl;
 	for (unsigned int i=0; i<255; i++) {

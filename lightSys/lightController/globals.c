@@ -10,6 +10,7 @@
 #define CH1 1 
 #define CH2 2
 
+#define SCHARMAX 127
 #define BRIGHTMAX 255
 #define SSHORTMAX 32767
 #define SHORTMAX 65535
@@ -42,13 +43,15 @@ volatile unsigned char newProgram = 0;
 
 volatile unsigned short brightness[NUMCH];
 volatile unsigned char brightTime[NUMCH];
-volatile signed short speed[NUMCH];
+volatile float speed[NUMCH];
 volatile signed short TOC = BRIGHTMAX;
 volatile signed char gettingBrighter[NUMCH];
 volatile signed short brightDelay[NUMCH];
 volatile unsigned char argc;
 volatile unsigned char mask = 0;
 const unsigned char CHNL[3] = {CH0, CH1, CH2};
+
+unsigned long rndseed = 1000;
 
 //end of ze globalz
 //
@@ -67,6 +70,11 @@ struct updater_package updater_package_init(void (*updater) (), void (*updaterIn
 
 
 
+float myRand() {
+	rndseed = (16807*rndseed) % 2147483647; 
+	return (float) rndseed / (float) 2147483711;
+}
+
 signed char myHash(signed char x) {
 	signed char y = 0;
 	//avg over char's range is -4
@@ -79,7 +87,7 @@ signed char myHash(signed char x) {
 
 signed char offsetTOC() {
 	signed short x = TOC;
-	return TOC - 128;
+	return TOC - 127;
 }
 
 signed short abs(signed short x) {
@@ -97,5 +105,49 @@ signed char absChar(signed char x) {
 		return x;
 	}
 }
+
+float absFloat(float x) {
+	if (x < 0) {
+		return -x;
+	} else {
+		return 0;
+	}
+	
+}
+
+signed char myRound(float x) {
+	x += 0.5;
+	signed short y = x;
+	return y;
+}
+
+signed char boundSignedShort(signed short *x, signed char *dx) {
+	signed long trial = *x;
+	trial += *dx;
+	if (trial > SSHORTMAX) {
+		*x = SSHORTMAX;
+		return 1;
+	} else if (trial < -SSHORTMAX) {
+		*x = -SSHORTMAX;
+		return -1;
+	}
+	*x += *dx;
+	return 0;
+}
+signed char boundShort(unsigned short *x, signed char *dx) {
+	signed long trial = *x;
+	trial += *dx;
+	if (trial > SHORTMAX) {
+		*x = SHORTMAX;
+		return 1;
+	} else if (trial < 0) {
+		*x = 0;
+		return -1;
+	}
+	*x = trial;
+	return 0;
+}
+
+
 
 #endif

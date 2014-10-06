@@ -78,8 +78,31 @@ void test() {
 }
 
 void pulse() {
-	volatile signed short rnd = myHash(offsetTOC(TOC));
-	//rnd -= 14;
+	float rnd = myRand();
+	speed[0] += rnd - .5;	
+	if (rnd < 0.01) {
+		speed[0] *= 1.1;
+	}
+
+	if (absFloat(speed[0]) > SCHARMAX) {
+		speed[0] *= 0.5;
+	}
+	signed char dBright = myRound(speed[0]);
+	unsigned short foo = brightness[0];	
+	signed char bndRes = boundShort(&foo, &dBright);
+	brightness[0] = foo;
+	if (bndRes != 0) {
+		speed[0] = -speed[0];
+	}
+	/*	
+	unsigned short distFromMax = SHORTMAX - brightness[0];
+	distFromMax >> 12;
+	*/
+	//brightness[0] += distFromMax;
+	
+	
+
+/*
 	if (brightness[0] < 40000) {
 		rnd += 35;
 	} else if (brightness[0] < 50000) {
@@ -89,26 +112,6 @@ void pulse() {
 
 	volatile signed long trialBright = brightness[0];
 	trialBright += speed[0] >> 7;
-//need to bound speed too.  Seems suspect to underflowing
-	if (next > SHORTMAX) {
-		brightness[0] = SHORTMAX;
-		speed[0] = 0;
-	} else if (next < 0) {
-		brightness[0] = 0;
-		speed[0] = 0;
-	} else {
-		brightness[0] = next;
-	}
-	/*
-	signed long trialNext = ((signed long) brightness[0]) + (signed long) speed[0];
-	if (trialNext < 0) {
-		speed[0] = abs(speed[0]);
-	} else if (trialNext >= SHORTMAX) {
-		speed[0] = -abs(speed[0]);
-	}
-	brightness[0] += speed[0];
-
-	speed[0] += myHash(offsetTOC()) >> 4;
 	*/
 }
 
