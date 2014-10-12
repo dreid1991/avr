@@ -93,9 +93,9 @@ void pulse() {
 
 void sweep() {
 	for (unsigned char i=0; i<NUMCH; i++) {
-		buff[i] += speed[i];
-		signed char dBright = buff[i];
-		buff[i] -= dBright;
+		buffA[i] += speed[i];
+		signed char dBright = buffA[i];
+		buffA[i] -= dBright;
 		signed char bndRes = boundShort(&brightness[i], &dBright);
 		if (bndRes != 0) {
 			speed[i] = -speed[i];
@@ -103,6 +103,17 @@ void sweep() {
 	}
 }
 
+void pulseSweep() {
+	for (unsigned char i=0; i<NUMCH; i++) {
+		buffA[i] += speed[i];
+		signed char dBright = buffA[i];
+		buffA[i] -= dBright;
+		signed char bndRes = boundShort(&brightness[i], &dBright);
+		if (bndRes != 0) {
+			speed[i] = -speed[i];
+		}
+	}
+}
 
 //end updater implementations
 
@@ -116,17 +127,20 @@ void testInit() {
 }
 void pulseInit() {
 	brightness[0] = myHash(offsetTOC());
-	speed[0] = 0;
 }
 
 
 void sweepInit() {
 	for (unsigned int i=0; i<NUMCH; i++) {
-		brightness[i] = 0;
-		speed[i] = 60;//myRand() + 0.1;
+		speed[i] = 2 * myRand() + 0.1;
 	}
 }
 
+void pulseSweepInit() {
+	for (unsigned int i=0; i<NUMCH; i++) {
+		speed[i] = 2 * myRand() + 0.1;
+	}
+}
 
 //end init implementations
 
@@ -136,6 +150,8 @@ int main(void)
 	updaters[TEST_IDX] = UPDATERINIT(test);
 	updaters[PULSE_IDX] = UPDATERINIT(pulse);
 	updaters[SWEEP_IDX] = UPDATERINIT(sweep);
+	updaters[PULSESWEEP_IDX] = UPDATERINIT(pulseSweep);
+
 	updater = updaters[NOUP_IDX];
 
 	DDRB = _BV(CH0) | _BV(CH1) | _BV(CH2);
@@ -150,7 +166,7 @@ int main(void)
 	TIMSK |= _BV(TOIE0); 
 
 	TCCR0B = _BV(CS00);//setting the clock as some multiple of the global clock 
-	msg = 3;	
+	msg = 2;	
 	setProgram();
 	msg = 0;
 	sei();
@@ -161,7 +177,9 @@ int main(void)
 			updater.init();
 			TOC = BRIGHTMAX - 1; //so set brightness is called first time through
 			for (unsigned char i=0; i<BUFFSIZE; i++) {
-				buff[i] = 0;
+				buffA[i] = 0;
+				speed[i] = 0;
+				brightness[i] = 0;
 			}
 			newProgram = 0;
 		}

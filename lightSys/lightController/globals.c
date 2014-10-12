@@ -29,6 +29,7 @@
 #define TEST_IDX 1
 #define PULSE_IDX 2 
 #define SWEEP_IDX 3
+#define PULSESWEEP_IDX 4 
 
 #define BUFFSIZE 3
 struct updater_package {
@@ -53,8 +54,8 @@ volatile unsigned char argc;
 volatile unsigned char mask = 0;
 const unsigned char CHNL[3] = {CH0, CH1, CH2};
 
-volatile float buff[3];
-
+volatile float buffA[3];
+volatile float buffB[3];
 unsigned long rndseed = 1000;
 
 //end of ze globalz
