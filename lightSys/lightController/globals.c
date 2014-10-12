@@ -28,7 +28,9 @@
 #define NOUP_IDX 0
 #define TEST_IDX 1
 #define PULSE_IDX 2 
-#define FLASH_IDX 3
+#define SWEEP_IDX 3
+
+#define BUFFSIZE 3
 struct updater_package {
 	void (*update) ();
 	void (*init) ();
@@ -50,6 +52,8 @@ volatile signed short brightDelay[NUMCH];
 volatile unsigned char argc;
 volatile unsigned char mask = 0;
 const unsigned char CHNL[3] = {CH0, CH1, CH2};
+
+volatile float buff[3];
 
 unsigned long rndseed = 1000;
 
@@ -121,7 +125,7 @@ signed char myRound(float x) {
 	return y;
 }
 
-signed char boundSignedShort(signed short *x, signed char *dx) {
+signed char boundSignedShort(volatile signed short *x, signed char *dx) {
 	signed long trial = *x;
 	trial += *dx;
 	if (trial > SSHORTMAX) {
@@ -134,7 +138,7 @@ signed char boundSignedShort(signed short *x, signed char *dx) {
 	*x += *dx;
 	return 0;
 }
-signed char boundShort(unsigned short *x, signed char *dx) {
+signed char boundShort(volatile unsigned short *x, signed char *dx) {
 	signed long trial = *x;
 	trial += *dx;
 	if (trial > SHORTMAX) {

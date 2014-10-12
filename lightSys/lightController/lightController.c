@@ -67,64 +67,43 @@ void noUp() {
 }
 
 void test() {
-	if (brightness[0] == SHORTMAX) {
-		speed[0] = -1;
-	} else if (brightness[0] == 0) {
-		speed[0] = 1;
-	}
-	brightness[0] += speed[0];
-		
 
 }
 
 void pulse() {
-	float rnd = myRand();
-	speed[0] += rnd - .5;	
-	if (rnd < 0.01) {
-		speed[0] *= 1.1;
+	for (unsigned char i=0; i<NUMCH; i++) {
+		float rnd = myRand();
+		speed[i] += rnd - .5;	
+		if (rnd < 0.01) {
+			speed[0] *= 1.1;
+		}
+
+		if (absFloat(speed[i]) > SCHARMAX) {
+			speed[i] *= 0.5;
+		}
+		signed char dBright = myRound(speed[i]);
+		signed char bndRes = boundShort(&brightness[i], &dBright);
+		if (bndRes != 0) {
+			speed[i] = -speed[i];
+		}
 	}
 
-	if (absFloat(speed[0]) > SCHARMAX) {
-		speed[0] *= 0.5;
-	}
-	signed char dBright = myRound(speed[0]);
-	unsigned short foo = brightness[0];	
-	signed char bndRes = boundShort(&foo, &dBright);
-	brightness[0] = foo;
-	if (bndRes != 0) {
-		speed[0] = -speed[0];
-	}
-	/*	
-	unsigned short distFromMax = SHORTMAX - brightness[0];
-	distFromMax >> 12;
-	*/
-	//brightness[0] += distFromMax;
-	
-	
-
-/*
-	if (brightness[0] < 40000) {
-		rnd += 35;
-	} else if (brightness[0] < 50000) {
-		rnd += 15;
-	}
-	speed[0] += rnd * ((absChar(rnd) & 1) + 1) * ((((absChar(rnd) & 8) >> 3) + 1) << 5);
-
-	volatile signed long trialBright = brightness[0];
-	trialBright += speed[0] >> 7;
-	*/
 }
 
 
-void flash() {
-	if (brightness[0] == 0) {
-		brightness[0] = 0xffff;
-	} else {
-		brightness[0] = 0x0;
+void sweep() {
+	for (unsigned char i=0; i<NUMCH; i++) {
+		buff[i] += speed[i];
+		signed char dBright = buff[i];
+		buff[i] -= dBright;
+		signed char bndRes = boundShort(&brightness[i], &dBright);
+		if (bndRes != 0) {
+			speed[i] = -speed[i];
+		}
 	}
-	_delay_ms(1000);
-
 }
+
+
 //end updater implementations
 
 //init implementations
@@ -133,26 +112,22 @@ void noUpInit() {
 }
 
 void testInit() {
-//	brightness[0] = 0x8fff;
-	brightness[0] = 0x0000;
-	speed[0] = 1;
-	brightness[1] = 0x4fff;
-	brightness[2] = 0x0ff0;
-	mask |= _BV(CH1);
-}
 
+}
 void pulseInit() {
 	brightness[0] = myHash(offsetTOC());
 	speed[0] = 0;
 }
 
 
-void flashInit() {
-	brightness[0] = 0x0000;
-	brightness[1] = 0x0000;
-	brightness[2] = 0x0000;
-
+void sweepInit() {
+	for (unsigned int i=0; i<NUMCH; i++) {
+		brightness[i] = 0;
+		speed[i] = 60;//myRand() + 0.1;
+	}
 }
+
+
 //end init implementations
 
 int main(void)
@@ -160,7 +135,7 @@ int main(void)
 	updaters[NOUP_IDX] = UPDATERINIT(noUp);
 	updaters[TEST_IDX] = UPDATERINIT(test);
 	updaters[PULSE_IDX] = UPDATERINIT(pulse);
-	updaters[FLASH_IDX] = UPDATERINIT(flash);
+	updaters[SWEEP_IDX] = UPDATERINIT(sweep);
 	updater = updaters[NOUP_IDX];
 
 	DDRB = _BV(CH0) | _BV(CH1) | _BV(CH2);
@@ -175,7 +150,7 @@ int main(void)
 	TIMSK |= _BV(TOIE0); 
 
 	TCCR0B = _BV(CS00);//setting the clock as some multiple of the global clock 
-	msg = 2;	
+	msg = 3;	
 	setProgram();
 	msg = 0;
 	sei();
@@ -185,6 +160,9 @@ int main(void)
 		if (newProgram) {
 			updater.init();
 			TOC = BRIGHTMAX - 1; //so set brightness is called first time through
+			for (unsigned char i=0; i<BUFFSIZE; i++) {
+				buff[i] = 0;
+			}
 			newProgram = 0;
 		}
 		updater.update();
@@ -216,7 +194,7 @@ void setProgram() {
 	} else if (msg == 2) {
 		updater = updaters[PULSE_IDX];
 	} else if (msg == 3) {
-		updater = updaters[FLASH_IDX];
+		updater = updaters[SWEEP_IDX];
 	}
 	newProgram = 1;
 
