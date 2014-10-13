@@ -42,28 +42,41 @@ void _NOP() {
 }
 
 void helper() {
-	msg = 2;
-	setProgram();
-	TOC = BRIGHTMAX - 1;
-	updater.update();
 	//cout << brightness[0] << ", " <<brightness[1] << ", " <<brightness[2] << endl;
 
 	clkInt();
+	//cout << "hello" << endl;
+	if (newProgram) {
+	//	cout << "here" << endl;
+		TOC = BRIGHTMAX - 1; //so set brightness is called first time through
+		for (unsigned char i=0; i<BUFFSIZE; i++) {
+			buffA[i] = 0;
+		}
+		for (unsigned char i=0; i<NUMCH; i++) {
 
-	unsigned short x = 300; SHORTMAX;
-	cout << x << endl;
-	signed char dx = 150;
-	signed char res = boundShort(&x, &dx);
-	cout << x << endl;
+			speed[i] = 0;
+			brightness[i] = 0;
+		}
+		updater.init();
+		newProgram = 0;
+	}
 
+	for (unsigned int i=0; i<140000; i++) {
+	//	if (!(i%1000)) {
+		//	cout << brightness[0] << endl;
+		//}
+	//	cout << myRand() << endl;
+		cout << brightness[0] << endl;
+		updater.update();
+	}
 	//cout << (int) brightTime[0] << ", " << (int) brightTime[1] << ", " << (int) brightTime[2] << endl;
 	/*
-	for (unsigned int i=0; i<20000; i++) {
-		if (rand() < RAND_MAX/2) {
+	   for (unsigned int i=0; i<20000; i++) {
+	   if (rand() < RAND_MAX/2) {
 
-			updater.update();
-			cout << brightness[0] << endl;
-		}
+	   updater.update();
+	   cout << brightness[0] << endl;
+	   }
 		clkInt();
 	}
 	*/

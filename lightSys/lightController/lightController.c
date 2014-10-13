@@ -71,20 +71,42 @@ void test() {
 }
 
 void pulse() {
+	const signed char bitesize = 30;
 	for (unsigned char i=0; i<NUMCH; i++) {
 		float rnd = myRand();
-		speed[i] += rnd - .5;	
+		speed[i] += 20*(rnd - .5);	
 		if (rnd < 0.01) {
-			speed[0] *= 1.1;
+			speed[i] *= 1.1;
+		} else { 
+			speed[i] = speed[i] * 0.99;
 		}
-
+		if (rnd < 0.5 && rnd > 0.4993) { //every 10000 or so, add bias of up to 10000
+			buffA[i] = myRand() * 60000 - 30000;
+		}
+		if (rnd < 0.6 && rnd > 0.599) {
+			speed[i] = -speed[i];
+		}
+			
+		
 		if (absFloat(speed[i]) > SCHARMAX) {
 			speed[i] *= 0.5;
 		}
 		signed char dBright = myRound(speed[i]);
+		if (buffA[i] != 0 && dBright <= SCHARMAX-bitesize && dBright >= -SCHARMAX+bitesize) {
+			if (buffA[i] < 0) {
+				dBright-=10;
+				buffA[i]+=10;
+			} else {
+				dBright+=10;
+				buffA[i]-=10;
+			}
+			if (absFloat(buffA[i]) < 10) {
+				buffA[i] = 0;
+			}
+		}
 		signed char bndRes = boundShort(&brightness[i], &dBright);
 		if (bndRes != 0) {
-			speed[i] = -speed[i];
+			speed[i] = -.5*speed[i];
 		}
 	}
 
@@ -126,7 +148,7 @@ void testInit() {
 
 }
 void pulseInit() {
-	brightness[0] = myHash(offsetTOC());
+	brightness[0] = 0;//myHash(offsetTOC());
 }
 
 
@@ -174,13 +196,13 @@ int main(void)
     while(1)
     {
 		if (newProgram) {
-			updater.init();
 			TOC = BRIGHTMAX - 1; //so set brightness is called first time through
 			for (unsigned char i=0; i<BUFFSIZE; i++) {
 				buffA[i] = 0;
 				speed[i] = 0;
 				brightness[i] = 0;
 			}
+			updater.init();
 			newProgram = 0;
 		}
 		updater.update();
