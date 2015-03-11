@@ -167,15 +167,18 @@ void pulseSweepInit() {
 
 int main(void)
 {
+
+PIN ZERO IS TURNING ON.  DON'T KNOW WHY
+
 	updaters[NOUP_IDX] = UPDATERINIT(noUp);
 	updaters[TEST_IDX] = UPDATERINIT(test);
 	updaters[PULSE_IDX] = UPDATERINIT(pulse);
 	updaters[SWEEP_IDX] = UPDATERINIT(sweep);
 	updaters[PULSESWEEP_IDX] = UPDATERINIT(pulseSweep);
-
-	updater = updaters[PULSE_IDX];
+//was PULSE
+	updater = updaters[SWEEP_IDX];
 	updater.update();
-	DDRB = _BV(CH0) | _BV(CH1) | _BV(CH2);
+	DDRB = _BV(CLK) | _BV(DAT) | _BV(FLSH) | _BV(3);
 	CLKPR = _BV(CLKPCE);
 	CLKPR = 0; //8 whole mhz
 	wdt_disable(); //disables watchdog	
@@ -183,14 +186,29 @@ int main(void)
 //	GIMSK |= _BV(PCIE); //enabling pin change interrupts
 //	PCMSK |= _BV(PCINTCLK); //setting pin 1 to trigger interrupts
 	pinClockLast = 0;
-	
-	TIMSK |= _BV(TOIE0); 
+	PORTB = 0;	
+	TIMSK |= _BV(TOIE0);  //timer interrupt mask register
 
 	TCCR0B = _BV(CS00);//setting the clock as some multiple of the global clock 
 	//msg = 2;	
 	//setProgram();
 	msg = 0;
-	sei();
+	//HEEEEEEY INTERRUPTS ARE OFFFFFF
+//	sei();
+	for (char i=0; i<NUMCH; i++) {
+		if (i == 5) {
+			isOn[i] = 1;
+		} else {
+			isOn[i] = 0;
+		}
+	}
+	/*for (char i=0; i<NUMCH; i+=2) {
+		isOn[i] = 1;
+	}*/
+	
+	//flashShiftReg();
+	while(1){};
+	/*
 #ifndef TESTING
     while(1)
     {
@@ -209,6 +227,7 @@ int main(void)
 #else
 	helper();
 #endif
+*/
 }
 
 
@@ -257,34 +276,75 @@ PININTFN {
 }
 
 
+void flashShiftReg() {
+	PORTB |= _BV(3);
+	/*
+	for (signed char i=NUMCH-1; i>=0; i--) {
+		if (isOn[i]) {
+			PORTB |= _BV(DAT);
+		} else {
+			PORTB &= ~_BV(DAT);
+		}
+		_delay_ms(10);
+		PORTB |= _BV(CLK);
+		_delay_ms(10);
+	//	_delay_us(1);
+		PORTB &= ~_BV(CLK);
+	//	_delay_us(10);
+	}
+	PORTB &= ~_BV(DAT);
+	PORTB |= _BV(FLSH);
+	_delay_ms(10);
+	PORTB &= ~_BV(FLSH);
+	*/
+	_delay_ms(1000);
+	PORTB &= ~_BV(3);
+
+}
+
 void setCycleBrightnesses() {
 	//cout <<"mask is " <<  (int) mask << endl;
-	for (volatile unsigned char i=0; i<NUMCH; i++) {
+	for (volatile unsigned char i=0; i<8; i++) {
 		brightTime[i] = brightness[i] >> 8;
-		if ((brightTime[i] != 0) && !(mask & _BV(CHNL[i]))) {
-			PORTB |= _BV(CHNL[i]);
-		} else {
-			PORTB &= ~_BV(CHNL[i]);
-		}
+	//	if (brightTime[i] != 0) {// && !(mask & _BV(CHNL[i]))) {
+			isOn[i] = 1;
+	//	} else {
+	//		isOn[i] = 0;
+	//	}
 	}
 }
 
 CLKINTFN { // so 255 is on the whole time
+	cli();
 	TOC++; 
 	if (TOC == BRIGHTMAX) {
 		TOC = 0;
 		setCycleBrightnesses();
+		flashShiftReg();
 	//	PORTB |= _BV(CH0);
 	}
 //	if (TOC == 1) {
 //		PORTB &= ~_BV(CH0);
 //	}
+	char isChanged = 0;
+
+	isChanged = 1;
+/*
 	for (unsigned char i=0; i<NUMCH; i++) {
-		if (TOC == brightTime[i]) {
-			PORTB &= ~_BV(CHNL[i]);
+		if (TOC >= brightTime[i]) {
+			if (isOn[i]) {
+				isChanged = 1;
+			}
+			isOn[i] = 0;
+
 		}
-//		cout << (bool) (PORTB & _BV(CHNL[i])) << ", ";
+	}
+	isOn[0] = 1;
+	*/
+	if (isChanged) {
+		flashShiftReg();
 	}
 //	cout << endl;
+	sei();
 
 }

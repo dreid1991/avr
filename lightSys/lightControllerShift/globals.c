@@ -1,29 +1,23 @@
 #ifndef GLOBALS
 #define GLOBALS
 
-#define CLK 3
-#define DAT 4
 
-#define NUMCH 3
+#define CLK 0
+#define DAT 1
+#define FLSH 2
 
-#define CH0 0
-#define CH1 1 
-#define CH2 2
+
+#define NUMUPS 5
 
 #define SCHARMAX 127
 #define BRIGHTMAX 255
 #define SSHORTMAX 32767
 #define SHORTMAX 65535
 
-#if CLK == 3 
-#define PCINTCLK PCINT3
-#else
-#define PCINTCLK PCINT4
-#endif
-
 #define UPDATERINIT(base) updater_package_init(&base, &base ## Init)
 
-#define NUMUPS 4
+
+#define NUMCH 8
 
 #define NOUP_IDX 0
 #define TEST_IDX 1
@@ -52,15 +46,18 @@ volatile signed char gettingBrighter[NUMCH];
 volatile signed short brightDelay[NUMCH];
 volatile unsigned char argc;
 volatile unsigned char mask = 0;
-const unsigned char CHNL[3] = {CH0, CH1, CH2};
 
-volatile float buffA[3];
-volatile float buffB[3];
+volatile char isOn[NUMCH];
+
+
+volatile float buffA[NUMCH];
+volatile float buffB[NUMCH];
 unsigned long rndseed = 1000;
 
 //end of ze globalz
 //
 //
+void flashShiftReg();
 void setProgram();
 extern struct updater_package updater;
 
